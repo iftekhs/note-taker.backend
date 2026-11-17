@@ -465,9 +465,13 @@ describe('posts', () => {
 });
 
 describe('aggregations', () => {
-  it('groups users by interest in exactly one aggregate call (admin only)', async () => {
+  it('groups users by the requested interest in exactly one aggregate call (admin only)', async () => {
     const user = await registerUser('Group User', 'group-user@example.com');
-    expect((await request(app).get('/api/users/grouped-by-interests').set('Authorization', bearer(user.token))).status).toBe(403);
+    expect(
+      (await request(app)
+        .get('/api/users/grouped-by-interests?interest=tech')
+        .set('Authorization', bearer(user.token))).status,
+    ).toBe(403);
 
     const admin = await registerUser('Group Admin', 'group-admin@example.com', ['tech']);
     await promote(admin.id);
@@ -477,34 +481,36 @@ describe('aggregations', () => {
 
     const spy = vi.spyOn(User, 'aggregate');
     const response = await request(app)
-      .get('/api/users/grouped-by-interests')
+      .get('/api/users/grouped-by-interests?interest=tech')
       .set('Authorization', bearer(admin.token));
     expect(spy).toHaveBeenCalledTimes(1);
     expect(response.status).toBe(200);
-    expect(response.body.data).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ _id: 'tech', count: 3 }),
-        expect.objectContaining({ _id: 'music', count: 2 }),
-      ]),
-    );
-    expect(response.body.total).toBe(2);
+    expect(response.body.data).toHaveLength(1);
+    expect(response.body.data[0]).toMatchObject({ _id: 'tech', count: 3 });
+    expect(response.body.total).toBe(1);
     expect(response.body.data[0].users[0]).toEqual(
       expect.objectContaining({ name: expect.any(String), email: expect.any(String) }),
     );
   });
 
-  it('applies the optional interest filter with the same single aggregate call', async () => {
+  it('requires an interest so the aggregation always uses an index', async () => {
     const admin = await registerUser('Filter Admin', 'filter-admin@example.com', ['tech']);
     await promote(admin.id);
-    await registerUser('Filtered Tech', 'filtered-tech@example.com', ['tech', 'travel']);
+
+    const missing = await request(app)
+      .get('/api/users/grouped-by-interests')
+      .set('Authorization', bearer(admin.token));
+    expect(missing.status).toBe(400);
 
     const spy = vi.spyOn(User, 'aggregate');
     const response = await request(app)
       .get('/api/users/grouped-by-interests?interest=TECH')
       .set('Authorization', bearer(admin.token));
+    expect(response.status).toBe(200);
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(response.body.data).toHaveLength(1);
-    expect(response.body.data[0]).toMatchObject({ _id: 'tech', count: 2 });
+    expect(spy.mock.calls[0][0]).toEqual(
+      expect.arrayContaining([{ $match: { interests: 'tech' } }]),
+    );
   });
 
   it('lists a user posts with one $lookup aggregation pipeline', async () => {

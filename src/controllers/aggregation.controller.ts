@@ -8,21 +8,21 @@ import type { GroupedByInterestsQuery } from '../validators/aggregation.validato
 /**
  * GET /api/users/grouped-by-interests (admin)
  *
- * Exactly one aggregate call. The optional pre-$unwind $match uses the
+ * Exactly one aggregate call. The required pre-$unwind $match uses the
  * interests_1 multikey index. The per-group total comes from $facet, so no
  * second count query is needed.
  */
 export const groupedByInterests: RequestHandler = async (req, res) => {
   const { page, limit, interest } = req.validated.query as GroupedByInterestsQuery;
   const { skip } = paginationParams({ page, limit });
-  const normalizedInterest = interest?.toLowerCase();
+  const normalizedInterest = interest.toLowerCase();
 
   const pipeline: PipelineStage[] = [
     // Indexed filter: narrows to users who have this interest.
-    ...(normalizedInterest ? [{ $match: { interests: normalizedInterest } }] : []),
+    { $match: { interests: normalizedInterest } },
     { $unwind: '$interests' },
     // Only return the requested group, not every interest of matching users.
-    ...(normalizedInterest ? [{ $match: { interests: normalizedInterest } }] : []),
+    { $match: { interests: normalizedInterest } },
     {
       $group: {
         _id: '$interests',

@@ -182,7 +182,7 @@ async function main(): Promise<void> {
 
   rows.push(
     await explainAggregate(
-      'Grouped by interests (filtered: tech)',
+      'Grouped by interests (interest: tech)',
       [
         { $match: { interests: 'tech' } },
         { $unwind: '$interests' },
@@ -196,23 +196,6 @@ async function main(): Promise<void> {
         },
       ],
       'interests_1',
-    ),
-  );
-
-  rows.push(
-    await explainAggregate(
-      'Grouped by interests (no filter)',
-      [
-        { $unwind: '$interests' },
-        {
-          $group: {
-            _id: '$interests',
-            users: { $push: { _id: '$_id', name: '$name', email: '$email' } },
-            count: { $sum: 1 },
-          },
-        },
-      ],
-      'none (documented scan)',
     ),
   );
 
@@ -250,7 +233,7 @@ async function main(): Promise<void> {
     )
     .join('\n');
 
-  const note = `\n\n> The unfiltered interests aggregation intentionally scans users: grouping every interest cannot use a single index. The multikey \`interests_1\` index is used when an interest filter is supplied. The admin "all notes", "all users" and "all posts" lists use the default \`_id\` index (backward scan), so no extra indexes are needed.\n`;
+  const note = `\n\n> The grouped-by-interests pipeline always starts with a required \`$match: { interests }\`, so it uses the multikey \`interests_1\` index. The admin "all notes", "all users" and "all posts" lists use the default \`_id\` index (backward scan), so no extra indexes are needed.\n`;
 
   fs.mkdirSync('docs', { recursive: true });
   fs.writeFileSync(path.join('docs', 'explain-results.md'), header + tableHeader + table + note);
