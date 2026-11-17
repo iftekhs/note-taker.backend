@@ -1,7 +1,6 @@
 import { Types } from 'mongoose';
 import { z } from 'zod';
 
-// ObjectId format validation for route params and optional filters.
 export const objectIdSchema = z
   .string()
   .refine(

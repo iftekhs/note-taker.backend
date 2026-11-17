@@ -19,7 +19,6 @@ const noteSchema = new Schema<INote>(
   { timestamps: true },
 );
 
-// Own-notes listing, newest first. Also serves the admin ?owner= filter.
 noteSchema.index({ owner: 1, _id: -1 });
 
 noteSchema.set('toJSON', {

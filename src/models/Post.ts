@@ -19,7 +19,6 @@ const postSchema = new Schema<IPost>(
   { timestamps: true },
 );
 
-// $lookup of posts by user, and a user's posts listing, newest first.
 postSchema.index({ author: 1, _id: -1 });
 
 postSchema.set('toJSON', {

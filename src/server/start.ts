@@ -6,16 +6,10 @@ import { Note } from '../models/Note.js';
 import { Post } from '../models/Post.js';
 import { User } from '../models/User.js';
 
-/**
- * Connects to MongoDB, syncs local indexes, starts listening, and wires up
- * graceful shutdown. Kept out of the Express app definition so `server.ts`
- * only describes routes and middleware.
- */
 export async function startServer(app: Express): Promise<Server> {
   await connectDB(env.MONGO_URI);
 
   if (env.NODE_ENV !== 'production') {
-    // Keep local indexes exactly in sync with the model declarations.
     await Promise.all([User.syncIndexes(), Note.syncIndexes(), Post.syncIndexes()]);
   }
 

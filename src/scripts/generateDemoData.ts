@@ -5,18 +5,12 @@ import { Note } from '../models/Note.js';
 import { Post } from '../models/Post.js';
 import { User } from '../models/User.js';
 
-// Hard cap of 100 documents per model. The seeded admin accounts for one user,
-// so the demo seeder creates 99 to keep the users collection at exactly 100.
 const MAX_SEED = 100;
 const USER_COUNT = MAX_SEED - 1;
 const NOTE_COUNT = MAX_SEED;
 const POST_COUNT = MAX_SEED;
 const INTERESTS = ['tech', 'music', 'travel', 'sports', 'reading', 'cooking'];
 
-/**
- * Generates realistic volume for planner/explain checks. Only removes the
- * demo accounts it created itself (demoN@example.com) and their content.
- */
 async function main(): Promise<void> {
   if (env.NODE_ENV === 'production') {
     throw new Error('Refusing to generate demo data in production');

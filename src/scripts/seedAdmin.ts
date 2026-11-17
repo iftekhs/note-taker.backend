@@ -3,7 +3,6 @@ import { connectDB, disconnectDB } from '../config/db.js';
 import { env } from '../config/env.js';
 import { User } from '../models/User.js';
 
-/** Creates the first admin. Safe to re-run: an existing account is promoted, not reset. */
 async function main(): Promise<void> {
   await connectDB(env.MONGO_URI);
 

@@ -7,10 +7,6 @@ interface ValidationSchemas {
   params?: ZodTypeAny;
 }
 
-/**
- * Parses body/query/params into req.validated.
- * Express 5 makes req.query read-only, so controllers read the parsed copy.
- */
 export function validate(schemas: ValidationSchemas): RequestHandler {
   return (req, _res, next) => {
     try {

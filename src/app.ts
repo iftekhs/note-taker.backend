@@ -11,7 +11,6 @@ import { noteRouter } from './routes/note.routes.js';
 import { postRouter } from './routes/post.routes.js';
 import { userRouter } from './routes/user.routes.js';
 
-/** Builds the Express app without starting a listener (used by the server and tests). */
 export function createApp() {
   const app = express();
 
@@ -27,7 +26,6 @@ export function createApp() {
   app.use('/api/me', meRouter);
   app.use('/api/notes', noteRouter);
   app.use('/api/posts', postRouter);
-  // Aggregation routes must be mounted before the /api/users CRUD router.
   app.use('/api/users', aggregationRouter);
   app.use('/api/users', userRouter);
 

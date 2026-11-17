@@ -23,7 +23,6 @@ const userSchema = new Schema<IUser>(
     interests: {
       type: [String],
       default: [],
-      // Keep grouping consistent: trim, lowercase, and remove duplicates.
       set: (values: string[]) => [
         ...new Set(values.map((value) => String(value).trim().toLowerCase()).filter(Boolean)),
       ],
@@ -32,12 +31,9 @@ const userSchema = new Schema<IUser>(
   { timestamps: true },
 );
 
-// Login lookup (User.findOne({ email })) and unique-email enforcement.
 userSchema.index({ email: 1 }, { unique: true });
-// Interests aggregation: $match on a specific interest. Multikey because interests is an array.
 userSchema.index({ interests: 1 });
 
-// Defense in depth: passwordHash is also select:false.
 userSchema.set('toJSON', {
   transform: (_doc, ret: any) => {
     delete ret.passwordHash;

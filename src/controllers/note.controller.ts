@@ -6,7 +6,6 @@ import { ApiError } from '../utils/ApiError.js';
 import { paginated, paginationParams } from '../utils/pagination.js';
 import type { CreateNoteInput, NoteListQuery, UpdateNoteInput } from '../validators/note.validators.js';
 
-/** GET /api/notes — own notes; admins see all and may filter with ?owner=. */
 export const listNotes: RequestHandler = async (req, res) => {
   const user = authUser(req);
   const { page, limit, owner } = req.validated.query as NoteListQuery;
@@ -16,7 +15,6 @@ export const listNotes: RequestHandler = async (req, res) => {
   if (user.role === 'admin') {
     if (owner) filter.owner = new Types.ObjectId(owner);
   } else {
-    // Non-admins always see only their own notes; an owner filter is ignored.
     filter.owner = user._id;
   }
 
@@ -28,7 +26,6 @@ export const listNotes: RequestHandler = async (req, res) => {
   res.json(paginated(notes, page, limit, total));
 };
 
-/** GET /api/notes/:id — admin may read any note; users only their own. */
 export const getNote: RequestHandler = async (req, res) => {
   const user = authUser(req);
   const { id } = req.validated.params as { id: string };
@@ -42,7 +39,6 @@ export const getNote: RequestHandler = async (req, res) => {
   res.json({ data: note });
 };
 
-/** POST /api/notes */
 export const createNote: RequestHandler = async (req, res) => {
   const user = authUser(req);
   const { title, content } = req.validated.body as CreateNoteInput;
@@ -51,7 +47,6 @@ export const createNote: RequestHandler = async (req, res) => {
   res.status(201).json({ data: note });
 };
 
-/** PUT /api/notes/:id — owner only (admin read access does not grant writes). */
 export const updateNote: RequestHandler = async (req, res) => {
   const user = authUser(req);
   const { id } = req.validated.params as { id: string };
@@ -67,7 +62,6 @@ export const updateNote: RequestHandler = async (req, res) => {
   res.json({ data: note });
 };
 
-/** DELETE /api/notes/:id — owner only. */
 export const deleteNote: RequestHandler = async (req, res) => {
   const user = authUser(req);
   const { id } = req.validated.params as { id: string };

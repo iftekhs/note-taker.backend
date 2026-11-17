@@ -7,7 +7,6 @@ import type { LoginInput, RegisterInput } from '../validators/auth.validators.js
 
 const SALT_ROUNDS = 12;
 
-/** POST /api/auth/register — role is always forced to "user". */
 export const register: RequestHandler = async (req, res) => {
   const { name, email, password, interests } = req.validated.body as RegisterInput;
 
@@ -26,11 +25,9 @@ export const register: RequestHandler = async (req, res) => {
   res.status(201).json({ token: signToken(user), user: user.toJSON() });
 };
 
-/** POST /api/auth/login */
 export const login: RequestHandler = async (req, res) => {
   const { email, password } = req.validated.body as LoginInput;
 
-  // passwordHash is select:false, so ask for it explicitly for this one query.
   const user = await User.findOne({ email }).select('+passwordHash');
   if (!user) throw new ApiError(401, 'Invalid email or password');
 

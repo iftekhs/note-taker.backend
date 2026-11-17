@@ -18,7 +18,6 @@ import {
 
 export const userRouter = Router();
 
-// Every route in this router is admin-only.
 userRouter.use(authenticate, authorizeRoles('admin'));
 
 userRouter.post('/', validate({ body: createUserSchema }), createUser);

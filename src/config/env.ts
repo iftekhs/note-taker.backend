@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
-// Validate configuration once at boot instead of failing later in a request.
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),

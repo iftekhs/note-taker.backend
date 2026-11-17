@@ -1,4 +1,3 @@
-/** An error carrying an HTTP status that the central error handler understands. */
 export class ApiError extends Error {
   status: number;
   details?: unknown;

@@ -8,7 +8,6 @@ export const notFound: RequestHandler = (req, _res, next) => {
   next(new ApiError(404, `Route not found: ${req.method} ${req.originalUrl}`));
 };
 
-/** Single error shape for the whole API. */
 export const errorHandler: ErrorRequestHandler = (err, _req, res, next) => {
   if (res.headersSent) return next(err);
 
@@ -49,7 +48,6 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, next) => {
     return res.status(409).json({ error: { message: `${field} already exists` } });
   }
 
-  // Body-parser and other Express middleware expose 4xx statuses on the error.
   const httpError = err as { status?: number; statusCode?: number; type?: string; message?: string };
   const status = httpError.status ?? httpError.statusCode;
   if (status && status >= 400 && status < 500) {

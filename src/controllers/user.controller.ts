@@ -10,7 +10,6 @@ import type { PaginationInput } from '../utils/pagination.js';
 
 const SALT_ROUNDS = 12;
 
-/** POST /api/users (admin) */
 export const createUser: RequestHandler = async (req, res) => {
   const { name, email, password, role, interests } = req.validated.body as CreateUserInput;
 
@@ -29,7 +28,6 @@ export const createUser: RequestHandler = async (req, res) => {
   res.status(201).json({ data: user });
 };
 
-/** GET /api/users (admin) */
 export const listUsers: RequestHandler = async (req, res) => {
   const { page, limit } = req.validated.query as PaginationInput;
   const { skip } = paginationParams({ page, limit });
@@ -42,7 +40,6 @@ export const listUsers: RequestHandler = async (req, res) => {
   res.json(paginated(users, page, limit, total));
 };
 
-/** GET /api/users/:id (admin) */
 export const getUser: RequestHandler = async (req, res) => {
   const { id } = req.validated.params as { id: string };
   const user = await User.findById(id).select('-__v');
@@ -50,7 +47,6 @@ export const getUser: RequestHandler = async (req, res) => {
   res.json({ data: user });
 };
 
-/** PUT /api/users/:id (admin) — role changes are allowed here only. */
 export const updateUser: RequestHandler = async (req, res) => {
   const { id } = req.validated.params as { id: string };
   const { name, email, password, role, interests } = req.validated.body as UpdateUserInput;
@@ -71,13 +67,11 @@ export const updateUser: RequestHandler = async (req, res) => {
   res.json({ data: user });
 };
 
-/** DELETE /api/users/:id (admin) */
 export const deleteUser: RequestHandler = async (req, res) => {
   const { id } = req.validated.params as { id: string };
   const user = await User.findByIdAndDelete(id);
   if (!user) throw new ApiError(404, 'User not found');
 
-  // A deleted account must not leave orphaned notes or posts behind.
   await Promise.all([
     Note.deleteMany({ owner: user._id }),
     Post.deleteMany({ author: user._id }),

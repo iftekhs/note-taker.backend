@@ -10,7 +10,6 @@ let mongo: MongoMemoryServer;
 beforeAll(async () => {
   mongo = await MongoMemoryServer.create();
   await mongoose.connect(mongo.getUri());
-  // Build the declared indexes before any test asserts on them.
   await Promise.all([User.init(), Note.init(), Post.init()]);
 });
 

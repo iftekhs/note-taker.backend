@@ -5,23 +5,14 @@ import { ApiError } from '../utils/ApiError.js';
 import { paginated, paginationParams, type PaginationInput } from '../utils/pagination.js';
 import type { GroupedByInterestsQuery } from '../validators/aggregation.validators.js';
 
-/**
- * GET /api/users/grouped-by-interests (admin)
- *
- * Exactly one aggregate call. The required pre-$unwind $match uses the
- * interests_1 multikey index. The per-group total comes from $facet, so no
- * second count query is needed.
- */
 export const groupedByInterests: RequestHandler = async (req, res) => {
   const { page, limit, interest } = req.validated.query as GroupedByInterestsQuery;
   const { skip } = paginationParams({ page, limit });
   const normalizedInterest = interest.toLowerCase();
 
   const pipeline: PipelineStage[] = [
-    // Indexed filter: narrows to users who have this interest.
     { $match: { interests: normalizedInterest } },
     { $unwind: '$interests' },
-    // Only return the requested group, not every interest of matching users.
     { $match: { interests: normalizedInterest } },
     {
       $group: {
@@ -50,14 +41,6 @@ export const groupedByInterests: RequestHandler = async (req, res) => {
   res.json(paginated(result?.data ?? [], page, limit, result?.total ?? 0));
 };
 
-/**
- * GET /api/users/:id/posts (any authenticated user)
- *
- * Single pipeline with one $lookup: the lookup uses `let` and a $match on
- * author, then sorts inside the lookup so it can use the posts
- * { author: 1, _id: -1 } index. An internal $facet returns both the page and
- * the total, so no second lookup or count query is needed.
- */
 export const postsByUser: RequestHandler = async (req, res) => {
   const { id } = req.validated.params as { id: string };
   const { page, limit } = req.validated.query as PaginationInput;
@@ -112,7 +95,6 @@ export const postsByUser: RequestHandler = async (req, res) => {
 
   if (!result) throw new ApiError(404, 'User not found');
 
-  // Never expose Mongoose internals from the looked-up posts.
   const posts = result.posts.map(({ __v: _version, ...post }) => post);
 
   res.json({
