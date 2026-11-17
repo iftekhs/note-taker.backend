@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt';
 import type { RequestHandler } from 'express';
+import { Note } from '../models/Note.js';
+import { Post } from '../models/Post.js';
 import { User } from '../models/User.js';
 import { ApiError } from '../utils/ApiError.js';
 import { paginated, paginationParams } from '../utils/pagination.js';
@@ -74,5 +76,12 @@ export const deleteUser: RequestHandler = async (req, res) => {
   const { id } = req.validated.params as { id: string };
   const user = await User.findByIdAndDelete(id);
   if (!user) throw new ApiError(404, 'User not found');
+
+  // A deleted account must not leave orphaned notes or posts behind.
+  await Promise.all([
+    Note.deleteMany({ owner: user._id }),
+    Post.deleteMany({ author: user._id }),
+  ]);
+
   res.status(204).send();
 };

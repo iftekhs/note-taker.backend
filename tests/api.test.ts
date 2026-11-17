@@ -222,6 +222,37 @@ describe('users and RBAC', () => {
     expect(gone.status).toBe(404);
   });
 
+  it('deletes notes and posts belonging to a deleted user, leaving others intact', async () => {
+    const admin = await registerUser('Cascade Admin', 'cascade-admin@example.com');
+    await promote(admin.id);
+
+    const doomed = await registerUser('Doomed User', 'doomed@example.com');
+    const survivor = await registerUser('Surviving User', 'survivor@example.com');
+
+    await Note.create([
+      { owner: doomed.id, title: 'Doomed note 1', content: 'one' },
+      { owner: doomed.id, title: 'Doomed note 2', content: 'two' },
+      { owner: survivor.id, title: 'Survivor note', content: 'three' },
+    ]);
+    await Post.create([
+      { author: doomed.id, title: 'Doomed post', content: 'one' },
+      { author: survivor.id, title: 'Survivor post', content: 'two' },
+    ]);
+
+    const response = await request(app)
+      .delete(`/api/users/${doomed.id}`)
+      .set('Authorization', bearer(admin.token));
+    expect(response.status).toBe(204);
+
+    expect(await User.exists({ _id: doomed.id })).toBeNull();
+    expect(await User.exists({ _id: survivor.id })).not.toBeNull();
+
+    expect(await Note.countDocuments({ owner: doomed.id })).toBe(0);
+    expect(await Post.countDocuments({ author: doomed.id })).toBe(0);
+    expect(await Note.countDocuments({ owner: survivor.id })).toBe(1);
+    expect(await Post.countDocuments({ author: survivor.id })).toBe(1);
+  });
+
   it('paginates the admin user list', async () => {
     await Promise.all(
       Array.from({ length: 12 }, (_, index) => createUserDirect(`page${index}@example.com`)),

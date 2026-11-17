@@ -183,7 +183,7 @@ Non-admins cannot use `?owner=` to see another user's notes; the filter is ignor
 | GET | `/api/users?page=&limit=` | Paginated users, newest first. |
 | GET | `/api/users/:id` | Single user. |
 | PUT | `/api/users/:id` | Update name/email/role/interests/password. |
-| DELETE | `/api/users/:id` | Delete user. Notes/posts are intentionally not cascade-deleted. |
+| DELETE | `/api/users/:id` | Delete user and cascade-delete their notes and posts. |
 
 ### Posts
 
@@ -310,7 +310,7 @@ The response is the standard paginated shape plus a safe `user` object. `passwor
 - **Admin note access is read-only for other users' notes.** The spec grants admins "view everyone's notes"; PUT/DELETE remain owner-only. Attempts return `403`.
 - **`403` for another user's note** (instead of `404`) makes the ownership rule explicit. The note must exist because ownership is checked after the `_id` lookup.
 - **Non-admin `?owner=` is ignored**, not an error, and the query is forced to the caller's `_id`.
-- **No cascade deletes.** Deleting a user leaves their notes/posts. This matches the spec and avoids extra indexes; the frontend warns the admin.
+- **Cascade deletes.** Deleting a user also removes their notes (`owner`) and posts (`author`); the frontend warns the admin before deletion. No extra indexes are needed because both queries use the existing owner/author indexes.
 - **No post update/delete.** The spec defines only create and list.
 - **Interests are trimmed, lowercased, and deduplicated** so grouping counts are stable.
 - **`totalPages` is `0` for an empty collection.** Page numbers beyond the last return empty data.
