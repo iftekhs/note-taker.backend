@@ -53,10 +53,10 @@ export const groupedByInterests: RequestHandler = async (req, res) => {
 /**
  * GET /api/users/:id/posts (any authenticated user)
  *
- * Single pipeline: the $lookup uses the pipeline form with `let` and a $match
- * on author, then sorts/skips/limits inside the lookup so it can use the
- * posts { author: 1, _id: -1 } index. A second lookup supplies the total
- * without a separate count query.
+ * Single pipeline with one $lookup: the lookup uses `let` and a $match on
+ * author, then sorts inside the lookup so it can use the posts
+ * { author: 1, _id: -1 } index. An internal $facet returns both the page and
+ * the total, so no second lookup or count query is needed.
  */
 export const postsByUser: RequestHandler = async (req, res) => {
   const { id } = req.validated.params as { id: string };
@@ -72,21 +72,21 @@ export const postsByUser: RequestHandler = async (req, res) => {
         pipeline: [
           { $match: { $expr: { $eq: ['$author', '$$userId'] } } },
           { $sort: { _id: -1 } },
-          { $skip: skip },
-          { $limit: limit },
+          {
+            $facet: {
+              data: [{ $skip: skip }, { $limit: limit }],
+              meta: [{ $count: 'total' }],
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              posts: '$data',
+              total: { $ifNull: [{ $arrayElemAt: ['$meta.total', 0] }, 0] },
+            },
+          },
         ],
-        as: 'posts',
-      },
-    },
-    {
-      $lookup: {
-        from: 'posts',
-        let: { userId: '$_id' },
-        pipeline: [
-          { $match: { $expr: { $eq: ['$author', '$$userId'] } } },
-          { $count: 'total' },
-        ],
-        as: 'postCount',
+        as: 'postResult',
       },
     },
     {
@@ -95,8 +95,8 @@ export const postsByUser: RequestHandler = async (req, res) => {
         name: 1,
         email: 1,
         interests: 1,
-        posts: 1,
-        total: { $ifNull: [{ $arrayElemAt: ['$postCount.total', 0] }, 0] },
+        posts: { $ifNull: [{ $arrayElemAt: ['$postResult.posts', 0] }, []] },
+        total: { $ifNull: [{ $arrayElemAt: ['$postResult.total', 0] }, 0] },
       },
     },
   ];

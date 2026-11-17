@@ -522,6 +522,8 @@ describe('aggregations', () => {
       .get(`/api/users/${user.id}/posts?page=1&limit=2`)
       .set('Authorization', bearer(other.token));
     expect(spy).toHaveBeenCalledTimes(1);
+    const pipeline = spy.mock.calls[0][0] as Array<Record<string, unknown>>;
+    expect(pipeline.filter((stage) => '$lookup' in stage)).toHaveLength(1);
     expect(response.status).toBe(200);
     expect(response.body.user).toMatchObject({ _id: user.id, email: 'lookup@example.com' });
     expect(response.body.data.map((post: { _id: string }) => post._id)).toEqual([
